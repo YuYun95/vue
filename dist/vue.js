@@ -1,6 +1,6 @@
 /*!
  * Vue.js v2.6.11
- * (c) 2014-2019 Evan You
+ * (c) 2014-2020 Evan You
  * Released under the MIT License.
  */
 (function (global, factory) {
@@ -4933,8 +4933,10 @@
       cb,
       options
     ) {
+      // 获取 Vue 实例 this
       var vm = this;
       if (isPlainObject(cb)) {
+        // 判断如果 cb 是对象执行 createWatcher
         return createWatcher(vm, expOrFn, cb, options)
       }
       options = options || {};
@@ -4958,6 +4960,8 @@
   var uid$3 = 0;
 
   function initMixin (Vue) {
+    // 给 Vue 实例增加 _init() 方法
+    // 合并 options / 初始化操作
     Vue.prototype._init = function (options) {
       var vm = this;
       // a uid
@@ -4972,6 +4976,7 @@
       }
 
       // a flag to avoid this being observed
+      // 如果是 Vue 实例不需要被 observe
       vm._isVue = true;
       // merge options
       if (options && options._isComponent) {
@@ -5070,18 +5075,32 @@
     return modified
   }
 
+  // 此处不用 class 的原因是方便后续给 Vue 实例混入实例成员
   function Vue (options) {
     if (!(this instanceof Vue)
-    ) {
+    ) {// 把Vue当作普通函数调用
       warn('Vue is a constructor and should be called with the `new` keyword');
     }
+    // 调用 _init() 方法
     this._init(options);
   }
 
+  // 注册 vm 的 _init() 方法，初始化 vm
   initMixin(Vue);
+
+  // 注册 vm 的 $data/$props/$set/$delete/$watch
   stateMixin(Vue);
+
+  // 初始化事件相关方法
+  // $on/$once/$off/$emit
   eventsMixin(Vue);
+
+  // 初始化生命周期相关的混入方法
+  // _update/$forceUpdate/$destroy
   lifecycleMixin(Vue);
+
+  // 混入 render
+  // $nextTick/_render
   renderMixin(Vue);
 
   /*  */
@@ -5386,11 +5405,13 @@
         );
       };
     }
+    // 初始化 Vue.config 对象
     Object.defineProperty(Vue, 'config', configDef);
 
     // exposed util methods.
     // NOTE: these are not considered part of the public API - avoid relying on
     // them unless you are aware of the risk.
+    // 这些工具方法不视作全局API的一部分，除非你已经意识到某些风险，否则不要去依赖他们
     Vue.util = {
       warn: warn,
       extend: extend,
@@ -5398,16 +5419,19 @@
       defineReactive: defineReactive$$1
     };
 
+    // 静态方法 set/delete/nextTick
     Vue.set = set;
     Vue.delete = del;
     Vue.nextTick = nextTick;
 
     // 2.6 explicit observable API
+    // 让一个对象可响应
     Vue.observable = function (obj) {
       observe(obj);
       return obj
     };
 
+    // 初始化 Vue.options 对象，并给其扩展 components/directives/filters
     Vue.options = Object.create(null);
     ASSET_TYPES.forEach(function (type) {
       Vue.options[type + 's'] = Object.create(null);
@@ -5417,15 +5441,20 @@
     // components with in Weex's multi-instance scenarios.
     Vue.options._base = Vue;
 
+    // 设置 keep-alive 组件
     extend(Vue.options.components, builtInComponents);
 
+    // 注册 Vue.use() 用来注册插件
     initUse(Vue);
+    // 注册 Vue.mixin() 实现混入
     initMixin$1(Vue);
+    // 注册 Vue.extend() 基于传入的options返回一个组件的构造函数
     initExtend(Vue);
+    // 注册 Vue.directive()、Vue.component()、Vue.filter()
     initAssetRegisters(Vue);
   }
 
-  initGlobalAPI(Vue);
+  initGlobalAPI(Vue); // 给vue挂载静态方法
 
   Object.defineProperty(Vue.prototype, '$isServer', {
     get: isServerRendering
@@ -7649,7 +7678,7 @@
         // skip the update if old and new VDOM state is the same.
         // `value` is handled separately because the DOM value may be temporarily
         // out of sync with VDOM state due to focus, composition and modifiers.
-        // This  #4521 by skipping the unnecesarry `checked` update.
+        // This  #4521 by skipping the unnecessary `checked` update.
         cur !== oldProps[key]
       ) {
         // some property updates can throw
@@ -9022,6 +9051,8 @@
   /*  */
 
   // install platform specific utils
+  // 判断是否是关键属性(表单元素的 input/checked/selected/muted)
+  // 如果是这些属性，设置el.props 属性(属性不设置到标签上)
   Vue.config.mustUseProp = mustUseProp;
   Vue.config.isReservedTag = isReservedTag;
   Vue.config.isReservedAttr = isReservedAttr;
@@ -9894,7 +9925,7 @@
         }
       },
       comment: function comment (text, start, end) {
-        // adding anyting as a sibling to the root node is forbidden
+        // adding anything as a sibling to the root node is forbidden
         // comments should still be allowed, but ignored
         if (currentParent) {
           var child = {
@@ -11873,15 +11904,18 @@
     var el = query(id);
     return el && el.innerHTML
   });
-
+  // 保留 Vue 实例的 $mount 方法
   var mount = Vue.prototype.$mount;
   Vue.prototype.$mount = function (
     el,
+    // 非ssr情况下 false，ssr 时候为true
     hydrating
   ) {
+    // 获取 el 对象
     el = el && query(el);
 
     /* istanbul ignore if */
+    // el 不能是 body 或者 html
     if (el === document.body || el === document.documentElement) {
       warn(
         "Do not mount Vue to <html> or <body> - mount to normal elements instead."
@@ -11891,11 +11925,15 @@
 
     var options = this.$options;
     // resolve template/el and convert to render function
+    // 把 template/el 转换成 render 函数
     if (!options.render) {
       var template = options.template;
+      // 如果模板存在
       if (template) {
         if (typeof template === 'string') {
+          // 如果模板是 id 选择器
           if (template.charAt(0) === '#') {
+            // 获取对应的 DOM 对象的 innerHTML
             template = idToTemplate(template);
             /* istanbul ignore if */
             if (!template) {
@@ -11941,6 +11979,7 @@
         }
       }
     }
+    // 调用 mount 方法，渲染 DOM
     return mount.call(this, el, hydrating)
   };
 
@@ -11963,3 +12002,4 @@
   return Vue;
 
 }));
+//# sourceMappingURL=vue.js.map

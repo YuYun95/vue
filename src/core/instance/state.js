@@ -49,10 +49,15 @@ export function initState (vm: Component) {
   vm._watchers = []
   const opts = vm.$options
   if (opts.props) initProps(vm, opts.props)
+  // 判断方法名是否和props属性重名、判断方法是否是函数、判断方法名是否以 '_' 或 '$' 开头
+  // 把 methods 注入 vue 实例
   if (opts.methods) initMethods(vm, opts.methods)
   if (opts.data) {
+    // 判断 data 属性是否和 props 和 methods 重名
+    // 把 data 属性注入到vue，把 data 转换为响应式对象
     initData(vm)
   } else {
+    // 如果没有传入 data，observe 创建响应式的 _data
     observe(vm._data = {}, true /* asRootData */)
   }
   if (opts.computed) initComputed(vm, opts.computed)
@@ -85,6 +90,7 @@ function initProps (vm: Component, propsOptions: Object) {
           vm
         )
       }
+  // 注入到 props
       defineReactive(props, key, value, () => {
         if (!isRoot && !isUpdatingChildComponent) {
           warn(
@@ -97,6 +103,7 @@ function initProps (vm: Component, propsOptions: Object) {
         }
       })
     } else {
+      // 转换为getter、setter
       defineReactive(props, key, value)
     }
     // static props are already proxied on the component's prototype
@@ -111,6 +118,8 @@ function initProps (vm: Component, propsOptions: Object) {
 
 function initData (vm: Component) {
   let data = vm.$options.data
+  // 初始化 _data，组件中 data 是函数，调用函数返回结果
+  // 否则直接返回 data
   data = vm._data = typeof data === 'function'
     ? getData(data, vm)
     : data || {}
@@ -123,10 +132,13 @@ function initData (vm: Component) {
     )
   }
   // proxy data on instance
+  // 获取 data 中的所有属性
   const keys = Object.keys(data)
+  // 获取 props / methods
   const props = vm.$options.props
   const methods = vm.$options.methods
   let i = keys.length
+  // 判断 data 上的成员是否和 props/methods 重名
   while (i--) {
     const key = keys[i]
     if (process.env.NODE_ENV !== 'production') {
@@ -144,10 +156,12 @@ function initData (vm: Component) {
         vm
       )
     } else if (!isReserved(key)) {
+      // 把 data 成员注入vue实例
       proxy(vm, `_data`, key)
     }
   }
   // observe data
+  // 响应式处理
   observe(data, true /* asRootData */)
 }
 
@@ -263,26 +277,27 @@ function initMethods (vm: Component, methods: Object) {
   const props = vm.$options.props
   for (const key in methods) {
     if (process.env.NODE_ENV !== 'production') {
-      if (typeof methods[key] !== 'function') {
+      if (typeof methods[key] !== 'function') { // 判断 methods 值是否是函数
         warn(
           `Method "${key}" has type "${typeof methods[key]}" in the component definition. ` +
           `Did you reference the function correctly?`,
           vm
         )
       }
-      if (props && hasOwn(props, key)) {
+      if (props && hasOwn(props, key)) { // 判断props属性是否和方法名相同
         warn(
           `Method "${key}" has already been defined as a prop.`,
           vm
         )
       }
-      if ((key in vm) && isReserved(key)) {
+      if ((key in vm) && isReserved(key)) {// 判断methods是否以 '_' 或 '$' 开头
         warn(
           `Method "${key}" conflicts with an existing Vue instance method. ` +
           `Avoid defining component methods that start with _ or $.`
         )
       }
     }
+    // 把 methods 注入 vue 实例
     vm[key] = typeof methods[key] !== 'function' ? noop : bind(methods[key], vm)
   }
 }

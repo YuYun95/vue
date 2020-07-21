@@ -12,7 +12,7 @@ function Vue (options) {
   ) {// 把Vue当作普通函数调用
     warn('Vue is a constructor and should be called with the `new` keyword')
   }
-  // 调用 _init() 方法
+  // 调用 _init() 方法，初始化vue实例成员，触发 beforeCreate 和 created 生命钩子
   this._init(options)
 }
 

@@ -14,9 +14,11 @@ export function initProvide (vm: Component) {
 }
 
 export function initInjections (vm: Component) {
+  // 把 inject 中的所有属性，并且这些属性存在 vm._provided 的属性存在的提取
   const result = resolveInject(vm.$options.inject, vm)
   if (result) {
     toggleObserving(false)
+    // 把 result 注入的 vue
     Object.keys(result).forEach(key => {
       /* istanbul ignore else */
       if (process.env.NODE_ENV !== 'production') {
